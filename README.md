@@ -1,3 +1,12 @@
+# quiz-app
+Basic quiz game created on React
+
+It's a simple game that displays images of famous authors. The user has to choose the correct book written by that author. 
+
+- If the user chooses a wrong answer the background color will show a red color;
+- If the user chooses the correct answer the background will display a green color, and a "Continue" Button to move to the next question.
+
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
