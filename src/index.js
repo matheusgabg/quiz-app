@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import AuthorQuiz from './AuthorQuiz';
 import * as serviceWorker from './serviceWorker';
-import {shuffle, sample} from 'underscore';
+import { shuffle, sample } from 'underscore';
+import { BrowserRouter, Route, withRouter } from 'react-router-dom';
+
+import AddAuthorForm from './AddAuthorForm';
 
 const authors = [
     {
@@ -17,11 +20,11 @@ const authors = [
         ]
     },
     {
-        name: 'J. K. Rowling',
+        name: 'J.K. Rowling',
         imageUrl: 'images/authors/jkrowling.jpg',
         imageSorce: 'Wikimedia Commons',
         books: ['Harry Potter and the Sorcerer\'s Stone']
-    },    
+    },
     {
         name: 'Joseph Conrad',
         imageUrl: 'images/authors/josephconrad.jpg',
@@ -29,22 +32,16 @@ const authors = [
         books: ['Heart of Darkness']
     },
     {
-        name: 'Mark Twain',
-        imageUrl: 'images/authors/marktwain.jpg',
-        imageSorce: 'Wikimedia Commons',
-        books: ['n']
-    },
-    {
         name: 'Stephen King',
         imageUrl: 'images/authors/marktwain.jpg',
         imageSorce: 'Wikimedia Commons',
-        books: ['The Shining, IT']
+        books: ['The Shining', 'IT']
     },
     {
         name: 'Wiliam Shakespeare',
         imageUrl: 'images/authors/marktwain.jpg',
         imageSorce: 'Wikimedia Commons',
-        books: ['Hamlet','Macbeth','Romeo and Juliet']
+        books: ['Hamlet', 'Macbeth', 'Romeo and Juliet']
     },
     {
         name: 'Charles Dickens',
@@ -54,35 +51,64 @@ const authors = [
     },
 ]
 
-function getTurnData(authors){
+function getTurnData(authors) {
     //selecting all books from all authors and concatenating in one object
-    const allBooks = authors.reduce(function(p,c,i){
+    const allBooks = authors.reduce(function (p, c, i) {
         return p.concat(c.books)
     }, []);
-    const fourRandomBooks = shuffle(allBooks.slice(0,4));
+    const fourRandomBooks = shuffle(allBooks).slice(0, 4);
     const answer = sample(fourRandomBooks);
 
+    //find author whose answer was selected
     return {
         books: fourRandomBooks,
-        author: authors.find((author) => 
+        author: authors.find((author) =>
             author.books.some((title) =>
-            title === answer))
+                title === answer))
     }
 }
 
-const state = {
-    turnData: getTurnData(authors),
-    highlight: ''
+function resetState(){
+    return {
+        turnData: getTurnData(authors),
+        highlight: ''
+    }
 }
 
-function onAnswerSelected(answer){
+let state = resetState();
+
+function onAnswerSelected(answer) {
     const isCorrect = state.turnData.author.books.some((book) => book === answer);
     state.highlight = isCorrect ? 'correct' : 'wrong';
     render();
 }
 
-function render(){
-    ReactDOM.render(<AuthorQuiz  {...state} onAnswerSelected={onAnswerSelected}/>, document.getElementById('root'));
+
+function App() {
+    return <AuthorQuiz  {...state} 
+    onAnswerSelected={onAnswerSelected} 
+    onContinue={() =>{
+        state = resetState();
+        render();
+    }}/>;
+}
+
+const AuthorWrapper = withRouter(({ history }) =>
+    <AddAuthorForm onAddAuthor={(author) => {
+        authors.push(author);
+        history.push('/');
+    }} />
+);
+
+function render() {
+    ReactDOM.render(
+        <BrowserRouter>
+            <>
+                <Route exact path="/" component={App} />
+                <Route path="/add" component={AuthorWrapper} />
+            </>
+        </BrowserRouter>
+        , document.getElementById('root'));
 }
 
 render();
