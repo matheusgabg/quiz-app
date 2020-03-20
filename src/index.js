@@ -3,8 +3,10 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import AuthorQuiz from './AuthorQuiz';
 import * as serviceWorker from './serviceWorker';
+import * as Redux from 'redux';
+import * as ReactRedux from 'react-redux';
 import { shuffle, sample } from 'underscore';
-import { BrowserRouter, Route, withRouter } from 'react-router-dom';
+import { BrowserRouter, Route } from 'react-router-dom';
 
 import AddAuthorForm from './AddAuthorForm';
 
@@ -68,50 +70,56 @@ function getTurnData(authors) {
     }
 }
 
-function resetState(){
-    return {
-        turnData: getTurnData(authors),
-        highlight: ''
+//----- REDUX IMPLEMENTATION
+
+//our reducer will define the initial state 
+//it will also define our actions that will go into the store
+//actions will alter the state, based on the action selected. They MUST return a new object.
+function reducer(state = {
+    authors,
+    turnData: getTurnData(authors),
+    highlight: ''
+}, action) {
+    switch (action.type) {
+        case 'ANSWER_SELECTED':
+            const isCorrect = state.turnData.author.books.some((book) => book === action.answer);
+            return Object.assign({},
+                state,
+                {
+                    highlight: isCorrect ? 'correct' : 'wrong'
+                }
+            );
+        case 'CONTINUE':
+            return Object.assign({}, state, {
+                highlight: '',
+                turnData: getTurnData(state.authors)
+            });
+        case 'ADD_AUTHOR':
+            return Object.assign({}, state, {
+                authors: state.authors.concat([action.author])
+            });
+        default: return state;
     }
 }
 
-let state = resetState();
-
-function onAnswerSelected(answer) {
-    const isCorrect = state.turnData.author.books.some((book) => book === answer);
-    state.highlight = isCorrect ? 'correct' : 'wrong';
-    render();
-}
+let store = Redux.createStore(reducer);
+//----- REDUX IMPLEMENTATION
 
 
-function App() {
-    return <AuthorQuiz  {...state} 
-    onAnswerSelected={onAnswerSelected} 
-    onContinue={() =>{
-        state = resetState();
-        render();
-    }}/>;
-}
-
-const AuthorWrapper = withRouter(({ history }) =>
-    <AddAuthorForm onAddAuthor={(author) => {
-        authors.push(author);
-        history.push('/');
-    }} />
-);
-
-function render() {
-    ReactDOM.render(
-        <BrowserRouter>
+//normally you would pass the state as a prop to AuthorQuiz ({...state})
+//But we will connect the state as a prop in the AuthorQuiz component with the react-redux connect function.
+//This way, the component will have access to the state, without having it passed as a prop!
+ReactDOM.render(
+    <BrowserRouter>
+        <ReactRedux.Provider store={store}>
             <>
-                <Route exact path="/" component={App} />
-                <Route path="/add" component={AuthorWrapper} />
+                <Route exact path="/" component={AuthorQuiz} />
+                <Route path="/add" component={AddAuthorForm} />
             </>
-        </BrowserRouter>
-        , document.getElementById('root'));
-}
+        </ReactRedux.Provider>
+    </BrowserRouter>
+    , document.getElementById('root'));
 
-render();
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
